@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.pedroPathing.tuning;
+package org.firstinspires.ftc.teamcode.Autonomous;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
@@ -9,78 +9,63 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathBuilder;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 
 /**
- * This is the StraightBackAndForth autonomous OpMode. It runs the robot in a specified distance
- * straight forward. On reaching the end of the forward Path, the robot runs the backward Path the
- * same distance back to the start. Rinse and repeat! This is good for testing a variety of Vectors,
- * like the drive Vector, the translational Vector, and the heading Vector. Remember to test your
- * tunings on CurvedBackAndForth as well, since tunings that work well for straight lines might
- * have issues going in curves.
- *
- * @author Anyi Lin - 10158 Scott's Bots
- * @author Aaron Yang - 10158 Scott's Bots
- * @author Harrison Womack - 10158 Scott's Bots
- * @version 1.0, 3/12/2024
+ * This autonomous OpMode runs a custom path using Pedro Pathing.
  */
 @Config
-@Autonomous (name = "AutoTest", group = "Autonomous Pathing Tuning")
+@Autonomous(name = "CustomPathAuto", group = "Autonomous Pathing Tuning")
 public class AutoTest extends OpMode {
-    private Telemetry telemetryA;
-
-    public static double DISTANCE = 40;
-
-    private boolean forward = true;
-
     private Follower follower;
-
-    private Path forwards;
-    private Path backwards;
+    private Path curvePath;
 
     /**
-     * This initializes the Follower and creates the forward and backward Paths. Additionally, this
-     * initializes the FTC Dashboard telemetry.
+     * Initializes the follower and creates a simple curve path.
      */
     @Override
     public void init() {
+        // Initialize the Follower
         follower = new Follower(hardwareMap);
 
-        forwards = new Path(new BezierLine(new Point(0,0, Point.CARTESIAN), new Point(DISTANCE,0, Point.CARTESIAN)));
-        forwards.setConstantHeadingInterpolation(0);
-        backwards = new Path(new BezierLine(new Point(DISTANCE,0, Point.CARTESIAN), new Point(0,0, Point.CARTESIAN)));
-        backwards.setConstantHeadingInterpolation(0);
+        // Define points for the Bezier curve
+        Point start = new Point(0, 0, Point.CARTESIAN);           // Starting point
+        Point mid = new Point(20, 20, Point.CARTESIAN);           // Control point for curve
+        Point end = new Point(40, 0, Point.CARTESIAN);            // Endpoint
 
-        follower.followPath(forwards);
+        // Create the curve path
+        curvePath = new Path(
+                new BezierCurve(start, mid, end)                     // Smooth curve
+        );
+        //curvePath.setConstantHeadingInterpolation(0);   sets constant heading on path
 
-        telemetryA = new MultipleTelemetry(this.telemetry, FtcDashboard.getInstance().getTelemetry());
-        telemetryA.addLine("This will run the robot in a straight line going " + DISTANCE
-                + " inches forward. The robot will go forward and backward continuously"
-                + " along the path. Make sure you have enough room.");
-        telemetryA.update();
+        // Instruct the follower to follow the curve path
+        follower.followPath(curvePath);
+
+        // Set up telemetry
+        Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
+        telemetry = new MultipleTelemetry(this.telemetry, dashboardTelemetry);
+        telemetry.addLine("Curve path initialized. Robot will move along the curve.");
+        telemetry.update();
     }
 
     /**
-     * This runs the OpMode, updating the Follower as well as printing out the debug statements to
-     * the Telemetry, as well as the FTC Dashboard.
+     * Runs the OpMode, updating the follower and toggling between forward and backward paths.
      */
     @Override
     public void loop() {
+        // Update the follower
         follower.update();
+
+        // Stop once the path is complete
         if (!follower.isBusy()) {
-            if (forward) {
-                forward = false;
-                follower.followPath(backwards);
-            } else {
-                forward = true;
-                follower.followPath(forwards);
-            }
+            telemetry.addLine("Path complete.");
+            telemetry.update();
+            requestOpModeStop();
         }
 
-        telemetryA.addData("going forward", forward);
-        follower.telemetryDebug(telemetryA);
+        // Debug telemetry
+        follower.telemetryDebug(telemetry);
     }
 }
