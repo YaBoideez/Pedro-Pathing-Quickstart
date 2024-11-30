@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.PinpointLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.ThreeWheelIMULocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.ThreeWheelLocalizer;
 import org.firstinspires.ftc.teamcode.pedroPathing.localization.localizers.TwoWheelLocalizer;
@@ -39,9 +40,9 @@ public class PoseUpdater {
 
     private Vector currentAcceleration = new Vector();
 
-    private double xOffset = 0;
-    private double yOffset = 0;
-    private double headingOffset = 0;
+    private double xOffset = 60;
+    private double yOffset = 36;
+    private double headingOffset = Math.toRadians(180);
 
     private long previousPoseTime;
     private long currentPoseTime;
@@ -70,7 +71,7 @@ public class PoseUpdater {
      */
     public PoseUpdater(HardwareMap hardwareMap) {
         // TODO: replace the second argument with your preferred localizer
-        this(hardwareMap, new ThreeWheelLocalizer(hardwareMap));
+        this(hardwareMap, new PinpointLocalizer(hardwareMap));
     }
 
     /**
