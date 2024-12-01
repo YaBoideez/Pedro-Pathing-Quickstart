@@ -33,12 +33,13 @@ public class AutoTest extends OpMode {
 
         // Define points for the Bezier curve
         Point start = new Point(36, 60, Point.CARTESIAN);           // Starting point
-        Point mid = new Point(36, 24, Point.CARTESIAN);           // Control point for curve
-        Point end = new Point(60, 60, Point.CARTESIAN);            // Endpoint
+        Point mid = new Point(35, 25, Point.CARTESIAN);           // Control point for curve
+        Point end = new Point(55, 55, Point.CARTESIAN);// Endpoint
+        Path path = new Path(new BezierCurve(mid,end));
 
         PathChain pathChain = follower.pathBuilder()
                 .addPath(new BezierLine(start,end))
-                .setConstantHeadingInterpolation(135)
+                .setConstantHeadingInterpolation(45)
                 //drop sample
                 .addPath(new BezierLine(start,mid))
                 .setConstantHeadingInterpolation(0)
@@ -46,13 +47,13 @@ public class AutoTest extends OpMode {
 
                 //loop 3 times to pick up and drop 3 times
                 .addPath(new BezierCurve(mid,start,end))
-                .setConstantHeadingInterpolation(135)
+                .setConstantHeadingInterpolation(35)
                 //drop sample
                 .addPath(new BezierCurve(end,start,mid))
                 .setConstantHeadingInterpolation(0)
                 //pick up sample
                 .addPath(new BezierCurve(mid,start,end))
-                .setConstantHeadingInterpolation(135)
+                .setConstantHeadingInterpolation(35)
                 //drop sample
                 .addPath(new BezierCurve(end,start,mid))
                 .setConstantHeadingInterpolation(0)
@@ -60,18 +61,11 @@ public class AutoTest extends OpMode {
                 .setPathEndTimeoutConstraint(3.0)
                 .build();
 
-        // Create the curve path
-        curvePath = new Path(
-                new BezierCurve(start, mid, end)// Smooth curve
-
-
-        );
-
         //curvePath.setConstantHeadingInterpolation(0);   sets constant heading on path
 
         // Instruct the follower to follow the curve path
-        follower.followPath(curvePath);
-        follower.followPath(pathChain);
+        follower.followPath(pathChain,true);
+        follower.followPath(path);
 
         // Set up telemetry
         Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
