@@ -9,6 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
+import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 
@@ -31,18 +33,45 @@ public class AutoTest extends OpMode {
 
         // Define points for the Bezier curve
         Point start = new Point(36, 60, Point.CARTESIAN);           // Starting point
-        Point mid = new Point(0, 40, Point.CARTESIAN);           // Control point for curve
-        Point end = new Point(-36, 50, Point.CARTESIAN);            // Endpoint
+        Point mid = new Point(36, 24, Point.CARTESIAN);           // Control point for curve
+        Point end = new Point(60, 60, Point.CARTESIAN);            // Endpoint
+
+        PathChain pathChain = follower.pathBuilder()
+                .addPath(new BezierLine(start,end))
+                .setConstantHeadingInterpolation(135)
+                //drop sample
+                .addPath(new BezierLine(start,mid))
+                .setConstantHeadingInterpolation(0)
+                //pick up sample
+
+                //loop 3 times to pick up and drop 3 times
+                .addPath(new BezierCurve(mid,start,end))
+                .setConstantHeadingInterpolation(135)
+                //drop sample
+                .addPath(new BezierCurve(end,start,mid))
+                .setConstantHeadingInterpolation(0)
+                //pick up sample
+                .addPath(new BezierCurve(mid,start,end))
+                .setConstantHeadingInterpolation(135)
+                //drop sample
+                .addPath(new BezierCurve(end,start,mid))
+                .setConstantHeadingInterpolation(0)
+                //pick up sample
+                .setPathEndTimeoutConstraint(3.0)
+                .build();
 
         // Create the curve path
         curvePath = new Path(
                 new BezierCurve(start, mid, end)// Smooth curve
 
+
         );
+
         //curvePath.setConstantHeadingInterpolation(0);   sets constant heading on path
 
         // Instruct the follower to follow the curve path
         follower.followPath(curvePath);
+        follower.followPath(pathChain);
 
         // Set up telemetry
         Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
