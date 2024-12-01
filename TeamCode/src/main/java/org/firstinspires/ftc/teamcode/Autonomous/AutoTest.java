@@ -36,7 +36,8 @@ public class AutoTest extends OpMode {
 
         // Create the curve path
         curvePath = new Path(
-                new BezierCurve(start, mid, end)                     // Smooth curve
+                new BezierCurve(start, mid, end)// Smooth curve
+
         );
         //curvePath.setConstantHeadingInterpolation(0);   sets constant heading on path
 
