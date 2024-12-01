@@ -30,9 +30,9 @@ public class AutoTest extends OpMode {
         follower = new Follower(hardwareMap);
 
         // Define points for the Bezier curve
-        Point start = new Point(0, 0, Point.CARTESIAN);           // Starting point
-        Point mid = new Point(20, 20, Point.CARTESIAN);           // Control point for curve
-        Point end = new Point(40, 0, Point.CARTESIAN);            // Endpoint
+        Point start = new Point(36, 60, Point.CARTESIAN);           // Starting point
+        Point mid = new Point(0, 40, Point.CARTESIAN);           // Control point for curve
+        Point end = new Point(-36, 50, Point.CARTESIAN);            // Endpoint
 
         // Create the curve path
         curvePath = new Path(
