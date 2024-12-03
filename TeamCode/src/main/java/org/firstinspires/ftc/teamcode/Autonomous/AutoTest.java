@@ -5,6 +5,7 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
@@ -12,84 +13,115 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
 
-/**
- * This autonomous OpMode runs a custom path using Pedro Pathing.
- */
 @Config
 @Autonomous(name = "CustomPathAuto", group = "Autonomous Pathing Tuning")
 public class AutoTest extends OpMode {
     private Follower follower;
-    private Path curvePath;
+    private PathChain initialPath;
+    private PathChain loopingPath;
+    private ElapsedTime timer = new ElapsedTime();
+
+    private enum State {
+        FOLLOW_INITIAL_PATH,
+        FOLLOW_LOOPING_PATH,
+        WAIT,
+        DONE
+    }
+
+    private State currentState = State.FOLLOW_INITIAL_PATH;
+    private int loopCount = 0; // Track the number of iterations
+    private static final int MAX_LOOP_COUNT = 3; // Number of times to repeat the loop
 
     /**
-     * Initializes the follower and creates a simple curve path.
+     * Initializes the follower and sets up paths for the autonomous sequence.
      */
     @Override
     public void init() {
         // Initialize the Follower
         follower = new Follower(hardwareMap);
 
-        // Define points for the Bezier curve
-        Point start = new Point(36, 60, Point.CARTESIAN);           // Starting point
-        Point mid = new Point(35, 25, Point.CARTESIAN);           // Control point for curve
-        Point end = new Point(55, 55, Point.CARTESIAN);// Endpoint
-        Path path = new Path(new BezierCurve(mid,end));
+        // Define points for the paths
+        Point start = new Point(36, 60, Point.CARTESIAN);   // Starting point
+        Point mid = new Point(35, 25, Point.CARTESIAN);    // Intermediate point (for pick-up)
+        Point end = new Point(55, 55, Point.CARTESIAN);    // Endpoint (for drop-off)
 
-        PathChain pathChain = follower.pathBuilder()
-                .addPath(new BezierLine(start,end))
-                .setConstantHeadingInterpolation(45)
-                //drop sample
-                .addPath(new BezierLine(start,mid))
-                .setConstantHeadingInterpolation(0)
-                //pick up sample
-
-                //loop 3 times to pick up and drop 3 times
-                .addPath(new BezierCurve(mid,start,end))
-                .setConstantHeadingInterpolation(35)
-                //drop sample
-                .addPath(new BezierCurve(end,start,mid))
-                .setConstantHeadingInterpolation(0)
-                //pick up sample
-                .addPath(new BezierCurve(mid,start,end))
-                .setConstantHeadingInterpolation(35)
-                //drop sample
-                .addPath(new BezierCurve(end,start,mid))
-                .setConstantHeadingInterpolation(0)
-                //pick up sample
-                .setPathEndTimeoutConstraint(3.0)
+        // Define the initial PathChain
+        initialPath = follower.pathBuilder()
+                .addPath(new BezierLine(start, end)) // Start to End
+                .setConstantHeadingInterpolation(45) // Drop-off
+                .addPath(new BezierLine(start, mid)) // Start to Mid
+                .setConstantHeadingInterpolation(0)  // Pick-up
                 .build();
 
-        //curvePath.setConstantHeadingInterpolation(0);   sets constant heading on path
+        // Define the looping PathChain
+        loopingPath = follower.pathBuilder()
+                .addPath(new BezierCurve(mid, start, end)) // Mid -> Start -> End
+                .setConstantHeadingInterpolation(35) // Drop-off
+                .addPath(new BezierCurve(end, start, mid)) // End -> Start -> Mid
+                .setConstantHeadingInterpolation(0)  // Pick-up
+                .setPathEndTimeoutConstraint(3.0)    // Timeout constraint
+                .build();
 
-        // Instruct the follower to follow the curve path
-        follower.followPath(pathChain,true);
-        follower.followPath(path);
+        // Start with the initial PathChain
+        follower.followPath(initialPath, true);
 
         // Set up telemetry
         Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
         telemetry = new MultipleTelemetry(this.telemetry, dashboardTelemetry);
-        telemetry.addLine("Curve path initialized. Robot will move along the curve.");
+        telemetry.addLine("Paths initialized. Robot will start moving.");
         telemetry.update();
     }
 
     /**
-     * Runs the OpMode, updating the follower and toggling between forward and backward paths.
+     * State machine to control the autonomous sequence.
      */
     @Override
     public void loop() {
-        // Update the follower
-        follower.update();
+        switch (currentState) {
+            case FOLLOW_INITIAL_PATH:
+                follower.update();
+                if (!follower.isBusy()) {
+                    currentState = State.FOLLOW_LOOPING_PATH;
+                    follower.followPath(loopingPath, true); // Start the looping path
+                    telemetry.addLine("Initial path complete. Starting looping path.");
+                    telemetry.update();
+                }
+                break;
 
-        // Stop once the path is complete
-        if (!follower.isBusy()) {
-            telemetry.addLine("Path complete.");
-            telemetry.update();
-            requestOpModeStop();
+            case FOLLOW_LOOPING_PATH:
+                follower.update();
+                if (!follower.isBusy()) {
+                    loopCount++;
+                    if (loopCount < MAX_LOOP_COUNT) {
+                        currentState = State.WAIT;
+                        timer.reset();
+                        telemetry.addLine("Loop " + loopCount + " complete. Waiting...");
+                    } else {
+                        currentState = State.DONE;
+                        telemetry.addLine("All loops complete. Ending autonomous.");
+                    }
+                    telemetry.update();
+                }
+                break;
+
+            case WAIT:
+                if (timer.seconds() > 2.0) { // Wait for 2 seconds
+                    currentState = State.FOLLOW_LOOPING_PATH;
+                    follower.followPath(loopingPath, true); // Repeat the looping path
+                    telemetry.addLine("Restarting looping path.");
+                    telemetry.update();
+                }
+                break;
+
+            case DONE:
+                telemetry.addLine("Autonomous complete. Robot is holding position.");
+                telemetry.update();
+                requestOpModeStop(); // End the OpMode
+                break;
         }
 
-        // Debug telemetry
+        // Debug telemetry for the follower
         follower.telemetryDebug(telemetry);
     }
 }
