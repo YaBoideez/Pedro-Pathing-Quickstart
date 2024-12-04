@@ -1,9 +1,12 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -34,7 +37,6 @@ public class AutoTest extends OpMode {
         FOLLOW_INITIAL_PATH,
         FOLLOW_LOOPING_PATH,
         WAIT,
-        MOVE_ARM,
         DONE
     }
 
@@ -42,12 +44,10 @@ public class AutoTest extends OpMode {
     private int loopCount = 0; // Track the number of iterations
     private static final int MAX_LOOP_COUNT = 3; // Number of times to repeat the loop
 
-    /**
-     * Initializes the follower and sets up paths for the autonomous sequence.
-     */
+
+
     @Override
     public void init() {
-
         // Initialize motors
         Shoulder = hardwareMap.get(DcMotor.class, "Shoulder");
         Elbow = hardwareMap.get(DcMotor.class, "Elbow");
@@ -90,9 +90,6 @@ public class AutoTest extends OpMode {
         telemetry.update();
     }
 
-    /**
-     * State machine to control the autonomous sequence.
-     */
     @Override
     public void loop() {
         switch (currentState) {
@@ -114,16 +111,31 @@ public class AutoTest extends OpMode {
                         currentState = State.WAIT;
                         timer.reset();
                         telemetry.addLine("Loop " + loopCount + " complete. Waiting...");
+                        telemetry.update();
+
+                        // Move the arm to intermediate position during the wait
+                        calculationIK(30, 0); // Example position during wait
                     } else {
                         currentState = State.DONE;
                         telemetry.addLine("All loops complete. Ending autonomous.");
+                        telemetry.update();
                     }
-                    telemetry.update();
                 }
                 break;
 
             case WAIT:
-                if (timer.seconds() > 2.0) { // Wait for 2 seconds
+                // Move arm dynamically during wait
+                if (timer.seconds() > 0.5 && timer.seconds() <= 1.5) {
+                    telemetry.addLine("Moving arm to target position 1...");
+                    calculationIK(30, 0); // Target position 1
+                    telemetry.update();
+                } else if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
+                    telemetry.addLine("Moving arm to target position 2...");
+                    calculationIK(40, 0); // Target position 2
+                    telemetry.update();
+                }
+
+                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
                     currentState = State.FOLLOW_LOOPING_PATH;
                     follower.followPath(loopingPath, true); // Repeat the looping path
                     telemetry.addLine("Restarting looping path.");
@@ -136,25 +148,15 @@ public class AutoTest extends OpMode {
                 telemetry.update();
                 requestOpModeStop(); // End the OpMode
                 break;
-
-            case MOVE_ARM:
-                follower.update();
-                if (!follower.isBusy()) {
-                    calculationIK(30, 30);
-                    currentState = State.DONE;
-                    telemetry.addLine("Autonomous complete. Robot is holding position.");
-                    telemetry.update();
-                }
-                break;
         }
 
         // Debug telemetry for the follower
         follower.telemetryDebug(telemetry);
     }
+
     public void calculationIK(double xTarget, double zTarget) {
-        double L1 = 29.21; //
-        double L2 = 40.64;
-        // Normal inverse kinematics calculation
+        double L1 = 29.21; // Length of first arm segment
+        double L2 = 40.64; // Length of second arm segment
 
         double distanceToTarget = Math.sqrt(xTarget * xTarget + zTarget * zTarget);
 
@@ -188,6 +190,5 @@ public class AutoTest extends OpMode {
             telemetry.addData("Elbow Target", ElbowTargetPos);
             telemetry.update();
         }
-
     }
 }
