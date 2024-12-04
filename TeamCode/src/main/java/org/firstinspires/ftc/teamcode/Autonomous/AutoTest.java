@@ -74,7 +74,7 @@ public class AutoTest extends OpMode {
         // Define the looping PathChain
         loopingPath = follower.pathBuilder()
                 .addPath(new BezierCurve(mid, start, end)) // Mid -> Start -> End
-                .setConstantHeadingInterpolation(35) // Drop-off
+                .setConstantHeadingInterpolation(45) // Drop-off
                 .addPath(new BezierCurve(end, start, mid)) // End -> Start -> Mid
                 .setConstantHeadingInterpolation(0)  // Pick-up
                 .setPathEndTimeoutConstraint(3.0)    // Timeout constraint
