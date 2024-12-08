@@ -147,7 +147,7 @@ public class AutoTest extends OpMode {
 
             case INITIAL_DROP:
                if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
-                    telemetry.addLine("Moving arm to target position 2...");
+                    telemetry.addLine("Moving arm to target position 1...");
                     //calculationIK(50, 0); // Target position 2
                     telemetry.update();
                 }
@@ -167,7 +167,7 @@ public class AutoTest extends OpMode {
                     //calculationIK(25, 0); // Target position 1
                     telemetry.update();
                 }
-                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                if (timer.seconds() > 5.0) { // Wait for 5 seconds total
                     currentState = State.FOLLOW_LOOPING_DROP;
                     follower.followPath(loopingDrop, true); // Repeat the looping path
                     telemetry.addLine("Restarting looping path.");
@@ -182,7 +182,7 @@ public class AutoTest extends OpMode {
                     telemetry.update();
                 }
 
-                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                if (timer.seconds() > 5.0) { // Wait for 5 seconds total
                     currentState = State.FOLLOW_LOOPING_PICK;
                     follower.followPath(loopingPick, true); // Repeat the looping path
                     telemetry.addLine("Restarting looping path.");
@@ -197,7 +197,7 @@ public class AutoTest extends OpMode {
                     //calculationIK(30, 0); // Target position 1
                     //telemetry.update();
                 }
-                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                if (timer.seconds() > 5.0) { // Wait for 5 seconds total
                     currentState = State.FOLLOW_LOOPING_DROP;
                     follower.followPath(loopingDrop, true); // Repeat the looping path
                     telemetry.addLine("Restarting looping path.");
