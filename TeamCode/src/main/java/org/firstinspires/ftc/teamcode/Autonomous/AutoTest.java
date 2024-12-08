@@ -136,7 +136,7 @@ public class AutoTest extends OpMode {
                         telemetry.update();
 
                         // Move the arm to intermediate position during the wait
-                        calculationIK(30, 0); // Example position during wait
+                        //calculationIK(25, 0); // Example position during wait
                     } else {
                         currentState = State.DONE;
                         telemetry.addLine("All loops complete. Ending autonomous.");
@@ -148,11 +148,11 @@ public class AutoTest extends OpMode {
             case INITIAL_DROP:
                if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
                     telemetry.addLine("Moving arm to target position 2...");
-                    calculationIK(40, 0); // Target position 2
+                    //calculationIK(50, 0); // Target position 2
                     telemetry.update();
                 }
 
-                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                if (timer.seconds() > 5.0) { // Wait for 2 seconds total
                     currentState = State.FOLLOW_INITIAL_PICK;
                     follower.followPath(initialPick, true); // Repeat the looping path
                     telemetry.addLine("Restarting looping path.");
@@ -162,9 +162,9 @@ public class AutoTest extends OpMode {
 
             case INITIAL_PICK_UP:
                 // Move arm dynamically during wait
-                if (timer.seconds() > 0.5 && timer.seconds() <= 1.5) {
+                if (timer.seconds() > 0.5 && timer.seconds() <= 2.5) {
                     telemetry.addLine("Moving arm to target position 1...");
-                    calculationIK(30, 0); // Target position 1
+                    //calculationIK(25, 0); // Target position 1
                     telemetry.update();
                 }
                 if (timer.seconds() > 2.0) { // Wait for 2 seconds total
@@ -178,7 +178,7 @@ public class AutoTest extends OpMode {
             case LOOPING_DROP:
                 if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
                     telemetry.addLine("Moving arm to target position 2...");
-                    calculationIK(40, 0); // Target position 2
+                    //calculationIK(40, 0); // Target position 2
                     telemetry.update();
                 }
 
@@ -194,8 +194,8 @@ public class AutoTest extends OpMode {
                 // Move arm dynamically during wait
                 if (timer.seconds() > 0.5 && timer.seconds() <= 1.5) {
                     telemetry.addLine("Moving arm to target position 1...");
-                    calculationIK(30, 0); // Target position 1
-                    telemetry.update();
+                    //calculationIK(30, 0); // Target position 1
+                    //telemetry.update();
                 }
                 if (timer.seconds() > 2.0) { // Wait for 2 seconds total
                     currentState = State.FOLLOW_LOOPING_DROP;
@@ -216,7 +216,7 @@ public class AutoTest extends OpMode {
                         telemetry.addLine("Loop " + dropLoopCount + " complete. Waiting...");
                         telemetry.update();
                         // Move the arm to intermediate position during the wait
-                        calculationIK(30, 0); // Example position during wait
+                        //calculationIK(30, 0); // Example position during wait
                     } else {
                         currentState = State.DONE;
                         telemetry.addLine("All loops complete. Ending autonomous.");

@@ -27,7 +27,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -263,7 +263,7 @@ public class CompTeleopV1 extends LinearOpMode {
                 Elbow.setTargetPosition(-900);
                 sleep(600);
                 Shoulder.setTargetPosition(500);
-                sleep(500);
+                sleep(1000);
                 Arm_extenstion.setTargetPosition(-2300);
                 Arm_extenstion.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 Arm_extenstion.setPower(1);
