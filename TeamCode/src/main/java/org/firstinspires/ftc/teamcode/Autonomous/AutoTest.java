@@ -1,12 +1,9 @@
 package org.firstinspires.ftc.teamcode.Autonomous;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -23,8 +20,10 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
 @Autonomous(name = "CustomPathAuto", group = "Autonomous Pathing Tuning")
 public class AutoTest extends OpMode {
     private Follower follower;
-    private PathChain initialPath;
-    private PathChain loopingPath;
+    private PathChain initialDrop;
+    private PathChain initialPick;
+    private PathChain loopingPick;
+    private PathChain loopingDrop;
     private ElapsedTime timer = new ElapsedTime();
 
     private DcMotor Shoulder = null;
@@ -34,14 +33,20 @@ public class AutoTest extends OpMode {
     private Servo Gripper = null;
 
     private enum State {
-        FOLLOW_INITIAL_PATH,
-        FOLLOW_LOOPING_PATH,
-        WAIT,
+        FOLLOW_INITIAL_PICK,
+        FOLLOW_INITIAL_DROP,
+        FOLLOW_LOOPING_PICK,
+        FOLLOW_LOOPING_DROP,
+        INITIAL_PICK_UP,
+        INITIAL_DROP,
+        LOOPING_PICK,
+        LOOPING_DROP,
         DONE
     }
 
-    private State currentState = State.FOLLOW_INITIAL_PATH;
-    private int loopCount = 0; // Track the number of iterations
+    private State currentState = State.FOLLOW_INITIAL_DROP;
+    private int pickLoopCount = 0; // Track the number of iterations
+    private int dropLoopCount = 0; // Track the number of iterations
     private static final int MAX_LOOP_COUNT = 3; // Number of times to repeat the loop
 
 
@@ -63,25 +68,32 @@ public class AutoTest extends OpMode {
         Point mid = new Point(35, 25, Point.CARTESIAN);    // Intermediate point (for pick-up)
         Point end = new Point(55, 55, Point.CARTESIAN);    // Endpoint (for drop-off)
 
-        // Define the initial PathChain
-        initialPath = follower.pathBuilder()
+        // Define the initial Picking up PathChain
+        initialDrop = follower.pathBuilder()
                 .addPath(new BezierLine(start, end)) // Start to End
                 .setConstantHeadingInterpolation(45) // Drop-off
+                .build();
+
+        // Define the initial Picking up PathChain
+        initialPick = follower.pathBuilder()
                 .addPath(new BezierLine(start, mid)) // Start to Mid
                 .setConstantHeadingInterpolation(0)  // Pick-up
                 .build();
 
-        // Define the looping PathChain
-        loopingPath = follower.pathBuilder()
-                .addPath(new BezierCurve(mid, start, end)) // Mid -> Start -> End
-                .setConstantHeadingInterpolation(45) // Drop-off
+        loopingPick = follower.pathBuilder()
                 .addPath(new BezierCurve(end, start, mid)) // End -> Start -> Mid
                 .setConstantHeadingInterpolation(0)  // Pick-up
+                .build();
+
+        // Define the looping PathChain
+        loopingDrop = follower.pathBuilder()
+                .addPath(new BezierCurve(mid, start, end)) // Mid -> Start -> End
+                .setConstantHeadingInterpolation(45) // Drop-off
                 .setPathEndTimeoutConstraint(3.0)    // Timeout constraint
                 .build();
 
         // Start with the initial PathChain
-        follower.followPath(initialPath, true);
+        follower.followPath(initialDrop, true);
 
         // Set up telemetry
         Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
@@ -93,24 +105,34 @@ public class AutoTest extends OpMode {
     @Override
     public void loop() {
         switch (currentState) {
-            case FOLLOW_INITIAL_PATH:
+            case FOLLOW_INITIAL_DROP:
                 follower.update();
                 if (!follower.isBusy()) {
-                    currentState = State.FOLLOW_LOOPING_PATH;
-                    follower.followPath(loopingPath, true); // Start the looping path
+                    currentState = State.INITIAL_DROP;
+                    follower.followPath(initialPick, true); // Start the looping path
                     telemetry.addLine("Initial path complete. Starting looping path.");
                     telemetry.update();
                 }
                 break;
 
-            case FOLLOW_LOOPING_PATH:
+            case FOLLOW_INITIAL_PICK:
                 follower.update();
                 if (!follower.isBusy()) {
-                    loopCount++;
-                    if (loopCount < MAX_LOOP_COUNT) {
-                        currentState = State.WAIT;
+                    currentState = State.INITIAL_PICK_UP;
+                    follower.followPath(loopingDrop, true); // Start the looping path
+                    telemetry.addLine("Initial path complete. Starting looping path.");
+                    telemetry.update();
+                }
+                break;
+
+            case FOLLOW_LOOPING_PICK:
+                follower.update();
+                if (!follower.isBusy()) {
+                    pickLoopCount++;
+                    if (pickLoopCount < MAX_LOOP_COUNT) {
+                        currentState = State.LOOPING_PICK;
                         timer.reset();
-                        telemetry.addLine("Loop " + loopCount + " complete. Waiting...");
+                        telemetry.addLine("Loop " + pickLoopCount + " complete. Waiting...");
                         telemetry.update();
 
                         // Move the arm to intermediate position during the wait
@@ -123,23 +145,83 @@ public class AutoTest extends OpMode {
                 }
                 break;
 
-            case WAIT:
-                // Move arm dynamically during wait
-                if (timer.seconds() > 0.5 && timer.seconds() <= 1.5) {
-                    telemetry.addLine("Moving arm to target position 1...");
-                    calculationIK(30, 0); // Target position 1
-                    telemetry.update();
-                } else if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
+            case INITIAL_DROP:
+               if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
                     telemetry.addLine("Moving arm to target position 2...");
                     calculationIK(40, 0); // Target position 2
                     telemetry.update();
                 }
 
                 if (timer.seconds() > 2.0) { // Wait for 2 seconds total
-                    currentState = State.FOLLOW_LOOPING_PATH;
-                    follower.followPath(loopingPath, true); // Repeat the looping path
+                    currentState = State.FOLLOW_INITIAL_PICK;
+                    follower.followPath(initialPick, true); // Repeat the looping path
                     telemetry.addLine("Restarting looping path.");
                     telemetry.update();
+                }
+                break;
+
+            case INITIAL_PICK_UP:
+                // Move arm dynamically during wait
+                if (timer.seconds() > 0.5 && timer.seconds() <= 1.5) {
+                    telemetry.addLine("Moving arm to target position 1...");
+                    calculationIK(30, 0); // Target position 1
+                    telemetry.update();
+                }
+                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                    currentState = State.FOLLOW_LOOPING_DROP;
+                    follower.followPath(loopingDrop, true); // Repeat the looping path
+                    telemetry.addLine("Restarting looping path.");
+                    telemetry.update();
+                }
+                break;
+
+            case LOOPING_DROP:
+                if (timer.seconds() > 1.5 && timer.seconds() <= 2.0) {
+                    telemetry.addLine("Moving arm to target position 2...");
+                    calculationIK(40, 0); // Target position 2
+                    telemetry.update();
+                }
+
+                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                    currentState = State.FOLLOW_LOOPING_PICK;
+                    follower.followPath(loopingPick, true); // Repeat the looping path
+                    telemetry.addLine("Restarting looping path.");
+                    telemetry.update();
+                }
+                break;
+
+            case LOOPING_PICK:
+                // Move arm dynamically during wait
+                if (timer.seconds() > 0.5 && timer.seconds() <= 1.5) {
+                    telemetry.addLine("Moving arm to target position 1...");
+                    calculationIK(30, 0); // Target position 1
+                    telemetry.update();
+                }
+                if (timer.seconds() > 2.0) { // Wait for 2 seconds total
+                    currentState = State.FOLLOW_LOOPING_DROP;
+                    follower.followPath(loopingDrop, true); // Repeat the looping path
+                    telemetry.addLine("Restarting looping path.");
+                    telemetry.update();
+                }
+                break;
+
+
+            case FOLLOW_LOOPING_DROP:
+                follower.update();
+                if (!follower.isBusy()) {
+                    dropLoopCount++;
+                    if (dropLoopCount < MAX_LOOP_COUNT) {
+                        currentState = State.LOOPING_DROP;
+                        timer.reset();
+                        telemetry.addLine("Loop " + dropLoopCount + " complete. Waiting...");
+                        telemetry.update();
+                        // Move the arm to intermediate position during the wait
+                        calculationIK(30, 0); // Example position during wait
+                    } else {
+                        currentState = State.DONE;
+                        telemetry.addLine("All loops complete. Ending autonomous.");
+                        telemetry.update();
+                    }
                 }
                 break;
 
