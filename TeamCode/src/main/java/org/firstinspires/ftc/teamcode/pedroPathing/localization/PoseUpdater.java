@@ -40,8 +40,8 @@ public class PoseUpdater {
 
     private Vector currentAcceleration = new Vector();
 
-    private double xOffset = 36;
-    private double yOffset = 60;
+    private double xOffset = 35.4;
+    private double yOffset = 64.66;
     private double headingOffset = Math.toRadians(180);
 
     private long previousPoseTime;

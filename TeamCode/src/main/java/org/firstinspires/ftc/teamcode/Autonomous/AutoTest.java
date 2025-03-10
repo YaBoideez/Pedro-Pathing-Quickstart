@@ -64,9 +64,9 @@ public class AutoTest extends OpMode {
         follower = new Follower(hardwareMap);
 
         // Define points for the paths
-        Point start = new Point(36, 60, Point.CARTESIAN);   // Starting point
-        Point mid = new Point(35, 25, Point.CARTESIAN);    // Intermediate point (for pick-up)
-        Point end = new Point(55, 55, Point.CARTESIAN);    // Endpoint (for drop-off)
+        Point start = new Point(35.4, 64.66, Point.CARTESIAN);   // Starting point
+        Point mid = new Point(37.1, 28.86, Point.CARTESIAN);    // Intermediate point (for pick-up)
+        Point end = new Point(53, 57.5, Point.CARTESIAN);    // Endpoint (for drop-off)
 
         // Define the initial Picking up PathChain
         initialDrop = follower.pathBuilder()
